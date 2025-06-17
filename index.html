@@ -4,7 +4,9 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Nexcet – Connecting Everybody With Technology</title>
-  <link rel="stylesheet" href="style.css"/>
+
+  <!-- note the ?v=2 query string → forces browsers to fetch the fresh CSS -->
+  <link rel="stylesheet" href="style.css?v=2"/>
 </head>
 <body>
 
@@ -31,10 +33,7 @@
 
   <!-- ===== MAIN ===== -->
   <main>
-    <!-- Spinner shown while loading -->
     <div id="spinner" class="spinner hidden"></div>
-
-    <!-- News cards rendered here -->
     <section id="news-container"></section>
   </main>
 
@@ -44,11 +43,11 @@
       <p>&copy; 2025 Nexcet. Built by Awal.</p>
       <p>Contact: <a href="mailto:nexcet@gmail.com">nexcet@gmail.com</a></p>
       <p>Follow us: [Twitter] [LinkedIn] (Coming Soon)</p>
-      <p class="powered">Powered by GPT & Mediastack</p>
+      <p class="powered">Powered by GPT &amp; Mediastack</p>
     </div>
   </footer>
 
-  <!-- ===== MODAL (hidden by default) ===== -->
+  <!-- ===== MODAL ===== -->
   <div id="modal" class="modal hidden">
     <div class="modal-content">
       <span id="modal-close" class="modal-close">&times;</span>

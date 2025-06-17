@@ -2,6 +2,9 @@
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:"Segoe UI",Tahoma,Verdana,sans-serif;line-height:1.6;background:#f4f4f4;color:#333}
 
+/* ===== FORCE HIDDEN ===== */
+.hidden{display:none!important}
+
 /* ===== HEADER ===== */
 header{background:#0d1b2a;color:#fff;padding:32px 20px;text-align:center;border-bottom:4px solid #1b263b}
 .header-content h1{font-size:2.4rem;margin-bottom:6px}
@@ -21,7 +24,6 @@ main{padding:24px 16px 40px;max-width:1200px;margin:0 auto}
 /* Spinner */
 .spinner{width:48px;height:48px;border:5px solid #cfe0ff;border-top-color:#0077b6;border-radius:50%;margin:40px auto;animation:spin 1s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-.hidden{display:none}
 
 /* ===== NEWS CARD ===== */
 .news-card{background:#fff;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.08);overflow:hidden;transition:transform .18s}
@@ -45,7 +47,5 @@ footer a:hover{text-decoration:underline}
 .read-full{display:inline-block;margin-top:10px;color:#0077b6;font-weight:600;text-decoration:none}
 .read-full:hover{text-decoration:underline}
 
-/* Accessibility */
+/* Accessibility helper */
 .visually-hidden{position:absolute;left:-10000px;top:auto;width:1px;height:1px;overflow:hidden}
-/* Make absolutely sure anything with class="hidden" stays hidden */
-.hidden { display: none !important; }
