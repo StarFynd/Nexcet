@@ -47,3 +47,5 @@ footer a:hover{text-decoration:underline}
 
 /* Accessibility */
 .visually-hidden{position:absolute;left:-10000px;top:auto;width:1px;height:1px;overflow:hidden}
+/* Make absolutely sure anything with class="hidden" stays hidden */
+.hidden { display: none !important; }
