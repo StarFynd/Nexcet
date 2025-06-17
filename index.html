@@ -1,19 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Nexcet</title>
-  <link rel="stylesheet" href="style.css" />
+  <title>Nexcet – Connecting Everybody With Technology</title>
+  <link rel="stylesheet" href="style.css"/>
 </head>
 <body>
 
+  <!-- ===== HEADER ===== -->
   <header>
     <div class="header-content">
       <h1>Nexcet</h1>
       <p class="tagline">Connecting Everybody With Technology</p>
 
-      <label for="category-select">Choose a Category:</label>
+      <!-- Category selector -->
+      <label for="category-select" class="visually-hidden">Choose a category</label>
       <select id="category-select">
         <option value="artificial-intelligence">AI</option>
         <option value="robotics">Robotics</option>
@@ -21,15 +23,22 @@
         <option value="gadgets">Gadgets</option>
         <option value="green-energy">Green Tech</option>
       </select>
+
+      <!-- Refresh button -->
+      <button id="refresh-btn">🔄 Refresh News</button>
     </div>
   </header>
 
+  <!-- ===== MAIN ===== -->
   <main>
-    <section id="news-container">
-      Loading news…
-    </section>
+    <!-- Spinner shown while loading -->
+    <div id="spinner" class="spinner hidden"></div>
+
+    <!-- News cards rendered here -->
+    <section id="news-container"></section>
   </main>
 
+  <!-- ===== FOOTER ===== -->
   <footer>
     <div class="footer-section">
       <p>&copy; 2025 Nexcet. Built by Awal.</p>
@@ -38,6 +47,17 @@
       <p class="powered">Powered by GPT & Mediastack</p>
     </div>
   </footer>
+
+  <!-- ===== MODAL (hidden by default) ===== -->
+  <div id="modal" class="modal hidden">
+    <div class="modal-content">
+      <span id="modal-close" class="modal-close">&times;</span>
+      <h2 id="modal-title"></h2>
+      <img id="modal-image" class="modal-img" src="" alt="Article image"/>
+      <p id="modal-desc"></p>
+      <a id="modal-link" href="#" target="_blank" class="read-full">Read full article ↗</a>
+    </div>
+  </div>
 
   <script src="script.js"></script>
 </body>
