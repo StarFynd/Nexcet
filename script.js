@@ -1,6 +1,6 @@
 /* ===============  CONFIG  =============== */
-const apiKey = "f4fe89cdeecdb9d8c1c9f51f1c65c1e7";       // ← replace with your Mediastack key
-const proxy  = "https://api.allorigins.win/raw?url="; // simple CORS proxy
+const apiKey = "f4fe89cdeecdb9d8c1c9f51f1c65c1e7";       // ← your Mediastack key
+const proxy  = "https://api.allorigins.win/raw?url="; // CORS helper
 const spinner = document.getElementById("spinner");
 const newsContainer = document.getElementById("news-container");
 
@@ -15,7 +15,6 @@ async function fetchNews(category = "artificial-intelligence") {
     const res = await fetch(proxy + encodeURIComponent(url));
     const data = await res.json();
 
-    // Build cards
     const cards = data.data.map(article => createCard(article)).join("");
     newsContainer.innerHTML = cards || "<p>No news found.</p>";
   } catch (err) {
@@ -28,15 +27,14 @@ async function fetchNews(category = "artificial-intelligence") {
 
 /* ===============  CARD TEMPLATE  =============== */
 function createCard(article) {
-  const img = article.image || "https://placehold.co/600x400?text=Nexcet";
-  // store details in data-attrs for modal use
+  const hasImage = article.image && article.image.trim() !== "";
   return `
-    <div class="news-card" 
+    <div class="news-card"
          data-title="${escapeHtml(article.title)}"
          data-desc="${escapeHtml(article.description || '')}"
-         data-img="${img}"
+         data-img="${hasImage ? article.image : ''}"
          data-link="${article.url}">
-      <img class="news-thumb" src="${img}" alt="">
+      ${hasImage ? `<img class="news-thumb" src="${article.image}" alt="">` : ""}
       <div class="news-content">
         <h3>${article.title}</h3>
         <a href="#" class="read-more">Read more</a>
@@ -53,7 +51,6 @@ const modalDesc  = document.getElementById("modal-desc");
 const modalImg   = document.getElementById("modal-image");
 const modalLink  = document.getElementById("modal-link");
 
-// open modal from card click
 newsContainer.addEventListener("click", (e) => {
   const card = e.target.closest(".news-card");
   if (!card) return;
@@ -61,13 +58,19 @@ newsContainer.addEventListener("click", (e) => {
 
   modalTitle.textContent = card.dataset.title;
   modalDesc.textContent  = card.dataset.desc || "No description available.";
-  modalImg.src           = card.dataset.img;
   modalLink.href         = card.dataset.link;
+
+  if (card.dataset.img) {
+    modalImg.src = card.dataset.img;
+    modalImg.style.display = "block";
+  } else {
+    modalImg.style.display = "none";
+  }
 
   modal.classList.remove("hidden");
 });
 
-// close modal
+// Close modal
 modalClose.addEventListener("click", () => modal.classList.add("hidden"));
 modal.addEventListener("click", (e) => {
   if (e.target === modal) modal.classList.add("hidden");
@@ -75,7 +78,9 @@ modal.addEventListener("click", (e) => {
 
 /* ===============  HELPERS  =============== */
 function escapeHtml(text){
-  return text.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  return text.replace(/&/g,"&amp;")
+             .replace(/</g,"&lt;")
+             .replace(/>/g,"&gt;");
 }
 
 /* ===============  EVENT LISTENERS  =============== */
