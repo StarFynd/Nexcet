@@ -1,10 +1,10 @@
 /* ===============  API KEYS  =============== */
 const mediastackKey = "f4fe89cdeecdb9d8c1c9f51f1c65c1e7";
-const gnewsKey      = "0dc86fce5370555738557352308711d8";     // ← paste your GNews key
-const proxy         = "https://api.allorigins.win/raw?url="; // handles CORS
+const gnewsKey      = "0dc86fce5370555738557352308711d8";      // ← paste your GNews key
+const proxy         = "https://api.allorigins.win/raw?url="; // CORS helper
 
 /* ===============  CACHE SETTINGS  =============== */
-const cacheTimeMinutes = 30;  // time-to-live for cached category data
+const cacheTimeMinutes = 30;  // minutes to keep data in localStorage
 
 /* ===============  DOM REFERENCES  =============== */
 const spinner       = document.getElementById("spinner");
@@ -26,15 +26,14 @@ async function fetchNews(category = "artificial-intelligence") {
     return;
   }
 
-  // 1️⃣  Try Mediastack
+  /* 1️⃣ try Mediastack */
   let data = await tryMediastack(category);
 
-  // 2️⃣  Fallback to GNews if Mediastack fails/empty
+  /* 2️⃣ fallback to GNews */
   if (!data || !data.length) {
     data = await tryGNews(category);
   }
 
-  // Render & cache if we got something
   if (data && data.length) {
     localStorage.setItem(cacheKey, JSON.stringify(data));
     localStorage.setItem(`${cacheKey}_time`, now.toString());
@@ -52,13 +51,11 @@ async function tryMediastack(category) {
   try {
     const res = await fetch(proxy + encodeURIComponent(url));
     const json = await res.json();
-    if (json && json.data && json.data.length) {
-      return json.data;
-    }
+    return json?.data || null;
   } catch (e) {
     console.warn("Mediastack error →", e);
+    return null;
   }
-  return null;
 }
 
 async function tryGNews(category) {
@@ -66,13 +63,13 @@ async function tryGNews(category) {
   try {
     const res = await fetch(proxy + encodeURIComponent(url));
     const json = await res.json();
-    if (json && json.articles && json.articles.length) {
-      // Normalise to Mediastack's field names so rest of code works
+    if (json?.articles?.length) {
+      // Map to Mediastack-like structure
       return json.articles.map(a => ({
-        title: a.title,
+        title:       a.title,
         description: a.description,
-        image: a.image,
-        url: a.url,
+        image:       a.image,
+        url:         a.url,
       }));
     }
   } catch (e) {
@@ -83,8 +80,14 @@ async function tryGNews(category) {
 
 /* ---------- Render helpers ---------- */
 function renderCards(newsArray) {
-  const cards = newsArray.map(createCard).join("");
-  newsContainer.innerHTML = cards || "<p>No news found.</p>";
+  const englishOnly = newsArray.filter(article => {
+    const text = `${article.title} ${article.description || ""}`;
+    const englishChars = (text.match(/[a-zA-Z]/g) || []).length;
+    return englishChars / text.length > 0.6;   // ≥ 60 % English
+  });
+
+  const cards = englishOnly.map(createCard).join("");
+  newsContainer.innerHTML = cards || "<p>No English news found.</p>";
 }
 
 function createCard(article) {
@@ -112,7 +115,7 @@ const modalDesc  = document.getElementById("modal-desc");
 const modalImg   = document.getElementById("modal-image");
 const modalLink  = document.getElementById("modal-link");
 
-newsContainer.addEventListener("click", (e) => {
+newsContainer.addEventListener("click", e => {
   const card = e.target.closest(".news-card");
   if (!card) return;
   e.preventDefault();
@@ -127,26 +130,28 @@ newsContainer.addEventListener("click", (e) => {
   } else {
     modalImg.style.display = "none";
   }
-
   modal.classList.remove("hidden");
 });
 
 modalClose.addEventListener("click", () => modal.classList.add("hidden"));
-modal.addEventListener("click", (e) => { if (e.target === modal) modal.classList.add("hidden"); });
+modal.addEventListener("click", e => { if (e.target === modal) modal.classList.add("hidden"); });
 
 /* ---------- Utility ---------- */
-function escapeHtml(t){return t.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+function escapeHtml(t){
+  return t.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+}
 
 /* ---------- UI listeners ---------- */
-document.getElementById("category-select").addEventListener("change", e => fetchNews(e.target.value));
+document.getElementById("category-select")
+        .addEventListener("change", e => fetchNews(e.target.value));
 
-document.getElementById("refresh-btn").addEventListener("click", () => {
-  const cat = document.getElementById("category-select").value;
-  // delete cache to force fresh fetch
-  localStorage.removeItem(`news_${cat}`);
-  localStorage.removeItem(`news_${cat}_time`);
-  fetchNews(cat);
-});
+document.getElementById("refresh-btn")
+        .addEventListener("click", () => {
+          const cat = document.getElementById("category-select").value;
+          localStorage.removeItem(`news_${cat}`);
+          localStorage.removeItem(`news_${cat}_time`);
+          fetchNews(cat);
+        });
 
 /* ---------- INITIAL ---------- */
 fetchNews();
