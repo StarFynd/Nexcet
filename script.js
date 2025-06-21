@@ -1,6 +1,6 @@
 /* ---------- KEYS ---------- */
-const mediastackKey = "YOUR_MEDIASTACK_API_KEY";
-const gnewsKey      = "YOUR_GNEWS_API_KEY";
+const mediastackKey = "f4fe89cdeecdb9d8c1c9f51f1c65c1e7";
+const gnewsKey      = "0dc86fce5370555738557352308711d8";
 const proxy         = "https://api.allorigins.win/raw?url=";   // CORS helper
 
 /* ---------- CACHE ---------- */
