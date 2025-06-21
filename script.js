@@ -1,113 +1,128 @@
-/* ===============  API KEYS  =============== */
-const mediastackKey = "f4fe89cdeecdb9d8c1c9f51f1c65c1e7";
-const gnewsKey      = "0dc86fce5370555738557352308711d8";      // ← paste your GNews key
-const proxy         = "https://api.allorigins.win/raw?url="; // CORS helper
+/* ---------- KEYS ---------- */
+const mediastackKey = "YOUR_MEDIASTACK_API_KEY";
+const gnewsKey      = "YOUR_GNEWS_API_KEY";
+const proxy         = "https://api.allorigins.win/raw?url=";   // CORS helper
 
-/* ===============  CACHE SETTINGS  =============== */
-const cacheTimeMinutes = 30;  // minutes to keep data in localStorage
+/* ---------- CACHE ---------- */
+const CACHE_MINUTES = 30;
 
-/* ===============  DOM REFERENCES  =============== */
+/* ---------- DOM ---------- */
 const spinner       = document.getElementById("spinner");
 const newsContainer = document.getElementById("news-container");
 
-/* ===============  FETCH & RENDER  =============== */
-async function fetchNews(category = "artificial-intelligence") {
-  spinner.classList.remove("hidden");
-  newsContainer.innerHTML = "";
+/* ---------- STATE ---------- */
+let currentCat   = "artificial-intelligence";
+let currentPage  = 1;
+let loading      = false;
+let endOfFeed    = false;
 
-  const cacheKey = `news_${category}`;
+/* ---------- MAIN FETCH ---------- */
+async function loadPage(cat = currentCat, page = 1) {
+  if (loading || endOfFeed) return;
+  loading = true;
+  spinner.classList.remove("hidden");
+
+  const cacheKey = `news_${cat}_${page}`;
   const cached   = localStorage.getItem(cacheKey);
   const cachedAt = localStorage.getItem(`${cacheKey}_time`);
   const now      = Date.now();
 
-  if (cached && cachedAt && now - cachedAt < cacheTimeMinutes * 60 * 1000) {
-    renderCards(JSON.parse(cached));
-    spinner.classList.add("hidden");
-    return;
-  }
+  let articles;
 
-  /* 1️⃣ try Mediastack */
-  let data = await tryMediastack(category);
-
-  /* 2️⃣ fallback to GNews */
-  if (!data || !data.length) {
-    data = await tryGNews(category);
-  }
-
-  if (data && data.length) {
-    localStorage.setItem(cacheKey, JSON.stringify(data));
-    localStorage.setItem(`${cacheKey}_time`, now.toString());
-    renderCards(data);
+  if (cached && cachedAt && now - cachedAt < CACHE_MINUTES * 60 * 1000) {
+    articles = JSON.parse(cached);
   } else {
-    newsContainer.innerHTML = "<p>No news found.</p>";
+    articles = await fetchFromProviders(cat, page);
+    if (articles) {
+      localStorage.setItem(cacheKey, JSON.stringify(articles));
+      localStorage.setItem(`${cacheKey}_time`, now.toString());
+    }
+  }
+
+  if (articles && articles.length) {
+    appendCards(articles);
+    if (articles.length < 10) endOfFeed = true;          // no more pages
+  } else if (page === 1) {
+    newsContainer.innerHTML = "<p>No English news found.</p>";
+  } else {
+    endOfFeed = true;
   }
 
   spinner.classList.add("hidden");
+  loading = false;
 }
 
-/* ---------- Provider helpers ---------- */
-async function tryMediastack(category) {
-  const url = `http://api.mediastack.com/v1/news?access_key=${mediastackKey}&categories=technology&keywords=${encodeURIComponent(category)}&limit=10`;
+/* ---------- Provider wrapper ---------- */
+async function fetchFromProviders(cat, page) {
+  const msData = await tryMediastack(cat, page);
+  if (msData && msData.length) return msData;
+
+  const gData = await tryGNews(cat, page);
+  return gData;
+}
+
+async function tryMediastack(cat, page) {
+  const offset = (page - 1) * 10;
+  const url = `http://api.mediastack.com/v1/news?access_key=${mediastackKey}&categories=technology&keywords=${encodeURIComponent(cat)}&limit=10&offset=${offset}`;
   try {
     const res = await fetch(proxy + encodeURIComponent(url));
     const json = await res.json();
     return json?.data || null;
   } catch (e) {
-    console.warn("Mediastack error →", e);
+    console.warn("Mediastack error", e);
     return null;
   }
 }
 
-async function tryGNews(category) {
-  const url = `https://gnews.io/api/v4/search?q=${encodeURIComponent(category)}&token=${gnewsKey}&lang=en&max=10`;
+async function tryGNews(cat, page) {
+  const url = `https://gnews.io/api/v4/search?q=${encodeURIComponent(cat)}&token=${gnewsKey}&lang=en&max=10&page=${page}`;
   try {
     const res = await fetch(proxy + encodeURIComponent(url));
     const json = await res.json();
     if (json?.articles?.length) {
-      // Map to Mediastack-like structure
       return json.articles.map(a => ({
-        title:       a.title,
+        title: a.title,
         description: a.description,
-        image:       a.image,
-        url:         a.url,
+        image: a.image,
+        url: a.url,
       }));
     }
   } catch (e) {
-    console.warn("GNews error →", e);
+    console.warn("GNews error", e);
   }
   return null;
 }
 
-/* ---------- Render helpers ---------- */
-function renderCards(newsArray) {
-  const englishOnly = newsArray.filter(article => {
-    const text = `${article.title} ${article.description || ""}`;
-    const englishChars = (text.match(/[a-zA-Z]/g) || []).length;
-    return englishChars / text.length > 0.6;   // ≥ 60 % English
+/* ---------- RENDER ---------- */
+function appendCards(list) {
+  const englishOnly = list.filter(a => {
+    const text = `${a.title} ${a.description || ""}`;
+    const en = (text.match(/[a-zA-Z]/g) || []).length;
+    return en / text.length > 0.6;
   });
 
-  const cards = englishOnly.map(createCard).join("");
-  newsContainer.innerHTML = cards || "<p>No English news found.</p>";
+  const html = englishOnly.map(cardTemplate).join("");
+  newsContainer.insertAdjacentHTML("beforeend", html);
 }
 
-function createCard(article) {
-  const hasImg = article.image && article.image.trim() !== "";
+function cardTemplate(a) {
+  const img = a.image && a.image.trim() !== "";
   return `
     <div class="news-card"
-         data-title="${escapeHtml(article.title)}"
-         data-desc="${escapeHtml(article.description || '')}"
-         data-img="${hasImg ? article.image : ''}"
-         data-link="${article.url}">
-      ${hasImg ? `<img class="news-thumb" src="${article.image}" alt="">` : ""}
+         data-title="${escapeHtml(a.title)}"
+         data-desc="${escapeHtml(a.description || '')}"
+         data-img="${img ? a.image : ''}"
+         data-link="${a.url}">
+      ${img ? `<img class="news-thumb" src="${a.image}" alt="">` : ""}
       <div class="news-content">
-        <h3>${article.title}</h3>
+        <h3>${a.title}</h3>
         <a href="#" class="read-more">Read more</a>
       </div>
     </div>
   `;
 }
 
-/* ---------- Modal logic ---------- */
+/* ---------- MODAL ---------- */
 const modal      = document.getElementById("modal");
 const modalClose = document.getElementById("modal-close");
 const modalTitle = document.getElementById("modal-title");
@@ -136,22 +151,35 @@ newsContainer.addEventListener("click", e => {
 modalClose.addEventListener("click", () => modal.classList.add("hidden"));
 modal.addEventListener("click", e => { if (e.target === modal) modal.classList.add("hidden"); });
 
-/* ---------- Utility ---------- */
-function escapeHtml(t){
-  return t.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
-}
+/* ---------- UTIL ---------- */
+function escapeHtml(t){return t.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
 
-/* ---------- UI listeners ---------- */
-document.getElementById("category-select")
-        .addEventListener("change", e => fetchNews(e.target.value));
+/* ---------- EVENTS ---------- */
+document.getElementById("category-select").addEventListener("change", e => {
+  currentCat  = e.target.value;
+  currentPage = 1;
+  endOfFeed   = false;
+  newsContainer.innerHTML = "";
+  loadPage(currentCat, currentPage);
+});
 
-document.getElementById("refresh-btn")
-        .addEventListener("click", () => {
-          const cat = document.getElementById("category-select").value;
-          localStorage.removeItem(`news_${cat}`);
-          localStorage.removeItem(`news_${cat}_time`);
-          fetchNews(cat);
-        });
+document.getElementById("refresh-btn").addEventListener("click", () => {
+  localStorage.clear();            // clear all caches
+  currentPage = 1;
+  endOfFeed   = false;
+  newsContainer.innerHTML = "";
+  loadPage(currentCat, currentPage);
+});
+
+/* Infinite scroll listener */
+window.addEventListener("scroll", () => {
+  if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 150) {
+    if (!loading && !endOfFeed) {
+      currentPage += 1;
+      loadPage(currentCat, currentPage);
+    }
+  }
+});
 
 /* ---------- INITIAL ---------- */
-fetchNews();
+loadPage(currentCat, currentPage);
