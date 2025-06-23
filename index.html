@@ -1,39 +1,44 @@
-<!DOCTYPE html><html lang="en">
+<!DOCTYPE html>
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Nexcet – Connecting With Technology</title>
-  <link rel="stylesheet" href="style.css?v=7" />
+  <title>Nexcet – Connecting Everybody With Technology</title>
+  <link rel="stylesheet" href="style.css?v=8">
 </head>
 <body>
-  <!-- ===== HEADER & BURGER MENU ===== -->
-  <header>
-    <button id="menu-toggle" aria-label="Open menu">☰</button>
-    <h1>Nexcet</h1>
-    <p class="tagline">Connecting Everybody With Technology</p>
-  </header>  <!-- ===== SIDE NAV ===== -->  <nav id="nav-menu" class="hidden">
-    <a href="#home"  data-route="home">Home</a>
-    <a href="#ai"    data-route="artificial-intelligence">AI</a>
-    <a href="#cybersecurity" data-route="cybersecurity">Cybersecurity</a>
-    <a href="#games" data-route="games">Games</a>
-    <a href="#software" data-route="software">Software</a>
-    <a href="#hardware" data-route="hardware">Hardware</a>
-    <a href="#startups" data-route="startups">Startups</a>
-    <a href="#leaders" data-route="leaders">Tech Leaders</a>
-    <a href="#inventions" data-route="inventions">Inventions</a>
-  </nav>  <!-- ===== MAIN VIEW CONTAINER ===== -->  <main id="app-view">
-    <div id="spinner" class="hidden">Loading…</div>
-    <section id="news-container"></section>
-  </main>  <!-- ===== FOOTER ===== -->  <footer>
-    <p>&copy; 2025 Nexcet.</p>
-    <p class="powered">Powered by GPT, Mediastack &amp; GNews</p>
-  </footer>  <!-- ===== MODAL FOR FULL ARTICLE ===== -->  <div id="modal" class="modal hidden">
-    <div class="modal-content">
-      <span id="modal-close" class="modal-close">&times;</span>
-      <img id="modal-image" class="modal-img" />
-      <h2 id="modal-title"></h2>
-      <p id="modal-desc"></p>
-      <a id="modal-link" href="#" target="_blank" class="read-full">View original ↗</a>
-    </div>
-  </div>  <!-- ===== CORE APP SCRIPT ===== -->  <script src="script.js?v=11"></script></body>
+  <!-- ===== TOP BAR ===== -->
+  <header class="topbar">
+    <h1 class="logo">Nexcet</h1>
+    <button id="burger" aria-label="Open menu">
+      <span></span><span></span><span></span>
+    </button>
+  </header>
+
+  <!-- ===== SIDE DRAWER ===== -->
+  <nav id="drawer" class="drawer hidden">
+    <div class="drawer-header">Sections</div>
+    <ul>
+      <li><a href="#home">Home</a></li>
+      <li><a href="#artificial-intelligence">AI</a></li>
+      <li><a href="#cybersecurity">Cybersecurity</a></li>
+      <li><a href="#games">Games</a></li>
+      <li><a href="#software">Software</a></li>
+      <li><a href="#hardware">Hardware</a></li>
+      <li><a href="#startups">Startups</a></li>
+      <li><a href="#leaders">Tech Leaders</a></li>
+      <li><a href="#inventions">Inventions</a></li>
+    </ul>
+  </nav>
+
+  <!-- ===== MAIN VIEW CONTAINER ===== -->
+  <main id="view"></main>
+
+  <!-- ===== FOOTER ===== -->
+  <footer>
+    <p>&copy; 2025 Nexcet • Built by Awal</p>
+  </footer>
+
+  <script src="script.js?v=11"></script>
+</body>
 </html>
