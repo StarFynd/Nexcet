@@ -1,62 +1,39 @@
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html><html lang="en">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Nexcet – Connecting Everybody With Technology</title>
-  <link rel="stylesheet" href="style.css?v=2"/>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nexcet – Connecting With Technology</title>
+  <link rel="stylesheet" href="style.css?v=7" />
 </head>
 <body>
-
-  <!-- ===== HEADER ===== -->
+  <!-- ===== HEADER & BURGER MENU ===== -->
   <header>
-    <div class="header-content">
-      <h1>Nexcet</h1>
-      <p class="tagline">Connecting Everybody With Technology</p>
-
-      <!-- Category selector -->
-      <label for="category-select" class="visually-hidden">Choose a category</label>
-      <select id="category-select">
-        <option value="artificial-intelligence">AI</option>
-        <option value="robotics">Robotics</option>
-        <option value="space">Space</option>
-        <option value="gadgets">Gadgets</option>
-        <option value="green-energy">Green Tech</option>
-      </select>
-
-      <!-- Refresh button -->
-      <button id="refresh-btn">🔄 Refresh Feed</button>
-    </div>
-  </header>
-
-  <!-- ===== MAIN ===== -->
-  <main>
-    <div id="spinner" class="spinner hidden"></div>
+    <button id="menu-toggle" aria-label="Open menu">☰</button>
+    <h1>Nexcet</h1>
+    <p class="tagline">Connecting Everybody With Technology</p>
+  </header>  <!-- ===== SIDE NAV ===== -->  <nav id="nav-menu" class="hidden">
+    <a href="#home"  data-route="home">Home</a>
+    <a href="#ai"    data-route="artificial-intelligence">AI</a>
+    <a href="#cybersecurity" data-route="cybersecurity">Cybersecurity</a>
+    <a href="#games" data-route="games">Games</a>
+    <a href="#software" data-route="software">Software</a>
+    <a href="#hardware" data-route="hardware">Hardware</a>
+    <a href="#startups" data-route="startups">Startups</a>
+    <a href="#leaders" data-route="leaders">Tech Leaders</a>
+    <a href="#inventions" data-route="inventions">Inventions</a>
+  </nav>  <!-- ===== MAIN VIEW CONTAINER ===== -->  <main id="app-view">
+    <div id="spinner" class="hidden">Loading…</div>
     <section id="news-container"></section>
-  </main>
-
-  <!-- ===== FOOTER ===== -->
-  <footer>
-    <div class="footer-section">
-      <p>&copy; 2025 Nexcet. Built by Awal.</p>
-      <p>Contact: <a href="mailto:nexcet@gmail.com">nexcet@gmail.com</a></p>
-      <p>Follow us: [Twitter] [LinkedIn] (Coming Soon)</p>
-      <p class="powered">Powered by GPT &amp; Mediastack</p>
-    </div>
-  </footer>
-
-  <!-- ===== MODAL ===== -->
-  <div id="modal" class="modal hidden">
+  </main>  <!-- ===== FOOTER ===== -->  <footer>
+    <p>&copy; 2025 Nexcet.</p>
+    <p class="powered">Powered by GPT, Mediastack &amp; GNews</p>
+  </footer>  <!-- ===== MODAL FOR FULL ARTICLE ===== -->  <div id="modal" class="modal hidden">
     <div class="modal-content">
       <span id="modal-close" class="modal-close">&times;</span>
+      <img id="modal-image" class="modal-img" />
       <h2 id="modal-title"></h2>
-      <img id="modal-image" class="modal-img" src="" alt="Article image"/>
       <p id="modal-desc"></p>
-      <a id="modal-link" href="#" target="_blank" class="read-full">Read full article ↗</a>
+      <a id="modal-link" href="#" target="_blank" class="read-full">View original ↗</a>
     </div>
-  </div>
-
-  <!-- 👇 Updated JS version -->
-  <script src="script.js?v=7"></script>
-</body>
+  </div>  <!-- ===== CORE APP SCRIPT ===== -->  <script src="script.js?v=9"></script></body>
 </html>

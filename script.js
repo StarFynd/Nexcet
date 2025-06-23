@@ -1,185 +1,190 @@
-/* ---------- KEYS ---------- */
-const mediastackKey = "f4fe89cdeecdb9d8c1c9f51f1c65c1e7";
-const gnewsKey      = "0dc86fce5370555738557352308711d8";
-const proxy         = "https://api.allorigins.win/raw?url=";   // CORS helper
+/* ====== CONFIG ====== */
+const mediastackKey = "YOUR_MEDIASTACK_API_KEY";
+const gnewsKey      = "YOUR_GNEWS_API_KEY";
+const proxy         = "https://api.allorigins.win/raw?url=";
 
-/* ---------- CACHE ---------- */
-const CACHE_MINUTES = 30;
+/* ====== RUNTIME STATE ====== */
+const PAGE_SIZE       = 10;
+const CACHE_MINUTES   = 30;
+const englishRatioMin = 0.6;
 
-/* ---------- DOM ---------- */
+let route     = "home";
+let page      = 1;
+let loading   = false;
+let endOfFeed = false;
+
+/* ====== DOM REFS ====== */
 const spinner       = document.getElementById("spinner");
 const newsContainer = document.getElementById("news-container");
+const navMenu       = document.getElementById("nav-menu");
+const burger        = document.getElementById("menu-toggle");
 
-/* ---------- STATE ---------- */
-let currentCat   = "artificial-intelligence";
-let currentPage  = 1;
-let loading      = false;
-let endOfFeed    = false;
+/* ====== ROUTE KEYWORDS ====== */
+const ROUTES = {
+  home:               "technology",
+  "artificial-intelligence": "artificial-intelligence",
+  cybersecurity:       "cybersecurity",
+  games:               "gaming",
+  software:            "software",
+  hardware:            "hardware",
+  startups:            "startup",
+  leaders:             "tech leaders",
+  inventions:          "invention"
+};
 
-/* ---------- MAIN FETCH ---------- */
-async function loadPage(cat = currentCat, page = 1) {
+/* ====== INIT ====== */
+window.addEventListener("hashchange", onRouteChange);
+window.addEventListener("scroll", onScroll);
+burger.addEventListener("click", () => navMenu.classList.toggle("hidden"));
+navMenu.addEventListener("click", e => {
+  if (e.target.tagName === "A") navMenu.classList.add("hidden");
+});
+onRouteChange();
+
+/* ====== ROUTING ====== */
+function onRouteChange() {
+  route      = location.hash.replace("#", "") || "home";
+  page       = 1;
+  endOfFeed  = false;
+  newsContainer.innerHTML = "";
+  loadPage();
+}
+
+/* ====== INFINITE SCROLL ====== */
+function onScroll() {
   if (loading || endOfFeed) return;
+  if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 150) {
+    page += 1;
+    loadPage();
+  }
+}
+
+/* ====== MAIN FETCH FLOW ====== */
+async function loadPage() {
   loading = true;
   spinner.classList.remove("hidden");
 
-  const cacheKey = `news_${cat}_${page}`;
-  const cached   = localStorage.getItem(cacheKey);
-  const cachedAt = localStorage.getItem(`${cacheKey}_time`);
-  const now      = Date.now();
+  const keyword = ROUTES[route] || "technology";
+  const cacheKey = `nex_${route}_${page}`;
+  const now = Date.now();
 
-  let articles;
-
-  if (cached && cachedAt && now - cachedAt < CACHE_MINUTES * 60 * 1000) {
-    articles = JSON.parse(cached);
-  } else {
-    articles = await fetchFromProviders(cat, page);
-    if (articles) {
-      localStorage.setItem(cacheKey, JSON.stringify(articles));
-      localStorage.setItem(`${cacheKey}_time`, now.toString());
-    }
+  const cached = localStorage.getItem(cacheKey);
+  const cachedTs = localStorage.getItem(`${cacheKey}_ts`);
+  if (cached && cachedTs && now - cachedTs < CACHE_MINUTES * 60 * 1000) {
+    render(JSON.parse(cached));
+    finishLoad();
+    return;
   }
 
-  if (articles && articles.length) {
-    appendCards(articles);
-    if (articles.length < 10) endOfFeed = true;          // no more pages
-  } else if (page === 1) {
-    newsContainer.innerHTML = "<p>No English news found.</p>";
+  let articles = await fetchMediastack(keyword, page);
+  if (!articles.length) articles = await fetchGNews(keyword, page);
+
+  if (articles.length) {
+    localStorage.setItem(cacheKey, JSON.stringify(articles));
+    localStorage.setItem(`${cacheKey}_ts`, now.toString());
+    render(articles);
+    if (articles.length < PAGE_SIZE) endOfFeed = true;
   } else {
+    if (page === 1) newsContainer.innerHTML = "<p>No articles found.</p>";
     endOfFeed = true;
   }
+  finishLoad();
+}
 
+function finishLoad() {
   spinner.classList.add("hidden");
   loading = false;
 }
 
-/* ---------- Provider wrapper ---------- */
-async function fetchFromProviders(cat, page) {
-  const msData = await tryMediastack(cat, page);
-  if (msData && msData.length) return msData;
-
-  const gData = await tryGNews(cat, page);
-  return gData;
-}
-
-async function tryMediastack(cat, page) {
-  const offset = (page - 1) * 10;
-  const url = `http://api.mediastack.com/v1/news?access_key=${mediastackKey}&categories=technology&keywords=${encodeURIComponent(cat)}&limit=10&offset=${offset}`;
+/* ====== PROVIDERS ====== */
+async function fetchMediastack(keyword, p) {
+  const offset = (p - 1) * PAGE_SIZE;
+  const url = `http://api.mediastack.com/v1/news?access_key=${mediastackKey}&keywords=${encodeURIComponent(keyword)}&limit=${PAGE_SIZE}&offset=${offset}`;
   try {
     const res = await fetch(proxy + encodeURIComponent(url));
-    const json = await res.json();
-    return json?.data || null;
-  } catch (e) {
-    console.warn("Mediastack error", e);
-    return null;
-  }
+    const j = await res.json();
+    return j.data || [];
+  } catch { return []; }
 }
 
-async function tryGNews(cat, page) {
-  const url = `https://gnews.io/api/v4/search?q=${encodeURIComponent(cat)}&token=${gnewsKey}&lang=en&max=10&page=${page}`;
+async function fetchGNews(keyword, p) {
+  const url = `https://gnews.io/api/v4/search?q=${encodeURIComponent(keyword)}&token=${gnewsKey}&lang=en&max=${PAGE_SIZE}&page=${p}`;
   try {
     const res = await fetch(proxy + encodeURIComponent(url));
-    const json = await res.json();
-    if (json?.articles?.length) {
-      return json.articles.map(a => ({
-        title: a.title,
-        description: a.description,
-        image: a.image,
-        url: a.url,
-      }));
-    }
-  } catch (e) {
-    console.warn("GNews error", e);
-  }
-  return null;
+    const j = await res.json();
+    return (j.articles || []).map(a => ({
+      title: a.title,
+      description: a.description,
+      image: a.image,
+      url: a.url
+    }));
+  } catch { return []; }
 }
 
-/* ---------- RENDER ---------- */
-function appendCards(list) {
-  const englishOnly = list.filter(a => {
-    const text = `${a.title} ${a.description || ""}`;
-    const en = (text.match(/[a-zA-Z]/g) || []).length;
-    return en / text.length > 0.6;
+/* ====== RENDER ====== */
+function render(list) {
+  const english = list.filter(a => {
+    const txt = `${a.title} ${a.description || ""}`;
+    const en  = (txt.match(/[a-zA-Z]/g) || []).length;
+    return en / txt.length > englishRatioMin;
   });
 
-  const html = englishOnly.map(cardTemplate).join("");
-  newsContainer.insertAdjacentHTML("beforeend", html);
+  newsContainer.insertAdjacentHTML(
+    "beforeend",
+    english.map(cardTemplate).join("")
+  );
 }
 
 function cardTemplate(a) {
-  const img = a.image && a.image.trim() !== "";
+  const img = a.image && a.image.trim();
+  const host = new URL(a.url).hostname.replace(/^www\\./, "");
   return `
     <div class="news-card"
          data-title="${escapeHtml(a.title)}"
-         data-desc="${escapeHtml(a.description || '')}"
-         data-img="${img ? a.image : ''}"
+         data-desc="${escapeHtml(a.description || "")}"
+         data-img="${img || ""}"
          data-link="${a.url}">
-      ${img ? `<img class="news-thumb" src="${a.image}" alt="">` : ""}
+      ${img ? `<img class="news-thumb" src="${img}" alt="">` : ""}
       <div class="news-content">
         <h3>${a.title}</h3>
+        <p class="src-time">${host}</p>
         <a href="#" class="read-more">Read more</a>
       </div>
-    </div>
-  `;
+    </div>`;
 }
 
-/* ---------- MODAL ---------- */
+/* ====== MODAL ====== */
 const modal      = document.getElementById("modal");
-const modalClose = document.getElementById("modal-close");
-const modalTitle = document.getElementById("modal-title");
-const modalDesc  = document.getElementById("modal-desc");
-const modalImg   = document.getElementById("modal-image");
-const modalLink  = document.getElementById("modal-link");
+const mClose     = document.getElementById("modal-close");
+const mTitle     = document.getElementById("modal-title");
+const mDesc      = document.getElementById("modal-desc");
+const mImg       = document.getElementById("modal-image");
+const mLink      = document.getElementById("modal-link");
 
 newsContainer.addEventListener("click", e => {
   const card = e.target.closest(".news-card");
   if (!card) return;
   e.preventDefault();
 
-  modalTitle.textContent = card.dataset.title;
-  modalDesc.textContent  = card.dataset.desc || "No description available.";
-  modalLink.href         = card.dataset.link;
+  mTitle.textContent = card.dataset.title;
+  mDesc.textContent  = card.dataset.desc || "No description.";
+  mLink.href         = card.dataset.link;
 
   if (card.dataset.img) {
-    modalImg.src = card.dataset.img;
-    modalImg.style.display = "block";
+    mImg.src = card.dataset.img;
+    mImg.style.display = "block";
   } else {
-    modalImg.style.display = "none";
+    mImg.style.display = "none";
   }
   modal.classList.remove("hidden");
 });
 
-modalClose.addEventListener("click", () => modal.classList.add("hidden"));
+mClose.onclick = () => modal.classList.add("hidden");
 modal.addEventListener("click", e => { if (e.target === modal) modal.classList.add("hidden"); });
 
-/* ---------- UTIL ---------- */
-function escapeHtml(t){return t.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
-
-/* ---------- EVENTS ---------- */
-document.getElementById("category-select").addEventListener("change", e => {
-  currentCat  = e.target.value;
-  currentPage = 1;
-  endOfFeed   = false;
-  newsContainer.innerHTML = "";
-  loadPage(currentCat, currentPage);
-});
-
-document.getElementById("refresh-btn").addEventListener("click", () => {
-  localStorage.clear();            // clear all caches
-  currentPage = 1;
-  endOfFeed   = false;
-  newsContainer.innerHTML = "";
-  loadPage(currentCat, currentPage);
-});
-
-/* Infinite scroll listener */
-window.addEventListener("scroll", () => {
-  if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 150) {
-    if (!loading && !endOfFeed) {
-      currentPage += 1;
-      loadPage(currentCat, currentPage);
-    }
-  }
-});
-
-/* ---------- INITIAL ---------- */
-loadPage(currentCat, currentPage);
+/* ====== HELPERS ====== */
+function escapeHtml(s) {
+  return s.replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;");
+}
