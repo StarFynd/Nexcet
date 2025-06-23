@@ -1,172 +1,190 @@
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body {
-  font-family: "Segoe UI", Tahoma, Arial, sans-serif;
-  background: #f8fafc;
-  color: #111827;
-  line-height: 1.6;
+/* Reset and base styles */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
-img { max-width: 100%; display: block; }
-a { text-decoration: none; color: inherit; }
-.hidden { display: none; }
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: #0e0e10;
+  color: #f4f4f4;
+  line-height: 1.6;
+  padding-top: 60px;
+}
 
+/* Topbar / Header */
 .topbar {
   position: fixed;
-  top: 0; left: 0;
+  top: 0;
   width: 100%;
-  z-index: 100;
+  background: #111;
+  padding: 12px 16px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: #0d1b2a;
-  color: #fff;
-  padding: 12px 18px;
-  box-shadow: 0 2px 4px rgba(0,0,0,.1);
+  z-index: 100;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.3);
 }
 .logo {
-  font-size: 1.4rem;
-  font-weight: 600;
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #00ffc8;
 }
-
 #burger {
-  width: 28px; height: 22px;
-  border: none; background: none;
-  display: flex; flex-direction: column;
-  justify-content: space-between;
+  background: none;
+  border: none;
   cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 #burger span {
   display: block;
+  width: 22px;
   height: 3px;
-  background: #fff;
+  background: #f4f4f4;
   border-radius: 2px;
 }
 
+/* Drawer (Side menu) */
 .drawer {
   position: fixed;
-  top: 0; left: 0;
+  top: 0;
+  left: -260px;
+  width: 260px;
   height: 100%;
-  width: 240px;
-  background: #111827;
-  color: #e5e7eb;
-  transform: translateX(-100%);
-  transition: transform 0.3s ease;
-  z-index: 90;
-  padding-top: 60px;
+  background: #111;
+  overflow-y: auto;
+  transition: left 0.3s ease;
+  z-index: 200;
+  border-right: 1px solid #222;
 }
-.drawer.open { transform: translateX(0); }
+.drawer.open {
+  left: 0;
+}
 .drawer-header {
-  padding: 10px 18px;
-  font-size: 0.8rem;
-  text-transform: uppercase;
-  color: #9ca3af;
-  border-bottom: 1px solid #1f2937;
+  font-size: 1.2rem;
+  font-weight: bold;
+  padding: 16px;
+  color: #00ffc8;
+  border-bottom: 1px solid #222;
 }
-.drawer ul { list-style: none; }
-.drawer li { border-bottom: 1px solid #1f2937; }
+.drawer ul {
+  list-style: none;
+}
+.drawer li {
+  border-bottom: 1px solid #1c1c1c;
+}
 .drawer a {
-  display: block;
-  padding: 12px 18px;
-  font-size: 1rem;
-  color: #e5e7eb;
-}
-.drawer a:hover { background: #1f2937; }
-
-#view {
-  padding: 20px;
-  margin-top: 70px;
-  max-width: 1100px;
-  margin-inline: auto;
-}
-.section-title {
-  font-size: 1.4rem;
-  margin: 0 0 18px 0;
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-weight: 600;
-  color: #0d1b2a;
+  gap: 10px;
+  padding: 14px 20px;
+  font-size: 1.1rem;
+  color: #e5e7eb;
+  text-decoration: none;
 }
-.section-title.ai { color: #6d28d9; }
-.section-title.cyber { color: #dc2626; }
-.section-title.games { color: #059669; }
-.section-title.software { color: #2563eb; }
-.section-title.hardware { color: #ea580c; }
-.section-title.startups { color: #ca8a04; }
-.section-title.leaders { color: #7c3aed; }
-.section-title.inventions { color: #0e7490; }
+.drawer a:hover {
+  background: #1c1c1c;
+}
 
-.news-card {
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 6px rgba(0,0,0,.05);
-  margin-bottom: 20px;
-  cursor: pointer;
-  transition: .2s;
+/* Main content area */
+main {
+  padding: 20px 16px 40px;
+  max-width: 900px;
+  margin: auto;
 }
-.news-card:hover { transform: translateY(-3px); }
+.section-title {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-transform: capitalize;
+}
+
+/* News Cards */
+.news-card {
+  background: #1a1a1d;
+  border-radius: 10px;
+  margin-bottom: 20px;
+  box-shadow: 0 1px 5px rgba(0,0,0,0.3);
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+.news-card:hover {
+  transform: scale(1.01);
+}
 .news-card img {
   width: 100%;
   height: auto;
-  object-fit: cover;
-  max-height: 300px;
+  display: block;
 }
 .news-card h3 {
-  font-size: 1.1rem;
-  padding: 12px 16px 4px 16px;
-  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+  padding: 12px 16px 6px;
 }
 .article-meta {
-  font-size: .85rem;
+  font-size: 0.9rem;
+  color: #a0a0a0;
   padding: 0 16px 12px;
-  color: #64748b;
 }
 
-#spinner {
-  text-align: center;
-  padding: 40px;
-  color: #475569;
-}
-
+/* Full article view */
 .article-full {
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0,0,0,.05);
-  padding: 22px;
-}
-.article-full h2 {
-  font-size: 1.5rem;
-  margin: 0 0 12px;
+  background: #18181b;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 1px 5px rgba(0,0,0,0.3);
 }
 .article-full img {
-  border-radius: 6px;
-  max-height: 320px;
-  object-fit: cover;
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
   margin-bottom: 16px;
 }
-.article-full a {
-  display: inline-block;
-  margin-top: 14px;
-  background: #0d1b2a;
-  color: #fff;
-  padding: 10px 16px;
-  border-radius: 6px;
-  font-size: .92rem;
+.article-full h2 {
+  font-size: 1.6rem;
+  margin-bottom: 10px;
 }
-#back {
-  background: none;
-  border: none;
-  color: #0d1b2a;
-  font-size: 1rem;
-  cursor: pointer;
-  margin-bottom: 14px;
+.article-full p {
+  margin: 10px 0;
+}
+.article-full a {
+  color: #00ffc8;
+  text-decoration: underline;
 }
 
+/* Back Button */
+#back {
+  background: #00ffc8;
+  color: #000;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+  margin-bottom: 16px;
+}
+
+/* Spinner */
+#spinner {
+  text-align: center;
+  padding: 20px;
+  color: #aaa;
+}
+.hidden {
+  display: none;
+}
+
+/* Footer */
 footer {
   text-align: center;
-  padding: 24px 12px;
-  margin-top: 60px;
-  font-size: .9rem;
-  color: #6b7280;
-  background: #f1f5f9;
-  border-top: 1px solid #e5e7eb;
+  padding: 16px;
+  color: #999;
+  font-size: 0.9rem;
+  margin-top: 40px;
 }
