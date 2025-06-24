@@ -2,19 +2,19 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Nexcet</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nexcet – Connecting Everybody With Technology</title>
+  <link rel="stylesheet" href="style.css?v=13">
   <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body>
-  <header>
-    <div class="logo">Nexcet</div>
-    <div class="tagline">Connecting Everybody With Technology</div>
-    <div id="burger"><i data-lucide="menu"></i></div>
+  <header class="topbar">
+    <h1 class="logo">Nexcet</h1>
+    <button id="burger" aria-label="Open menu"><span></span><span></span><span></span></button>
   </header>
 
   <nav id="drawer" class="drawer">
+    <div class="drawer-header">Sections</div>
     <ul>
       <li><a href="#home"><i data-lucide="home"></i> Home</a></li>
       <li><a href="#artificial-intelligence"><i data-lucide="bot"></i> AI</a></li>
@@ -23,21 +23,18 @@
       <li><a href="#software"><i data-lucide="code"></i> Software</a></li>
       <li><a href="#hardware"><i data-lucide="cpu"></i> Hardware</a></li>
       <li><a href="#startups"><i data-lucide="rocket"></i> Startups</a></li>
-      <li><a href="#innovations"><i data-lucide="lightbulb"></i> Innovations</a></li>
-      <li><a href="#companies"><i data-lucide="building"></i> Companies</a></li>
-      <li><a href="#leaders"><i data-lucide="users"></i> Tech Leaders</a></li>
+      <li><a href="#leaders"><i data-lucide="user"></i> Tech Leaders</a></li>
+      <li><a href="#inventions"><i data-lucide="lightbulb"></i> Inventions</a></li>
     </ul>
   </nav>
 
-  <main id="main"></main>
-
-  <div id="spinner" class="hidden">Loading...</div>
+  <main id="view"></main>
 
   <footer>
-    <p>Built by Awal • Powered by GPT + GNews</p>
+    <p>&copy; 2025 Nexcet • Built by Awal</p>
   </footer>
 
-  <script src="main.js"></script>
+  <script src="script.js?v=14"></script>
   <script>lucide.createIcons();</script>
 </body>
 </html>
