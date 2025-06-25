@@ -1,4 +1,4 @@
-const gKey = "YOUR_GNEWS_API_KEY"; // Use GNews only for now
+const gKey = "0dc86fce5370555738557352308711d8"; // Use GNews only for now
 const proxy = "https://api.allorigins.win/raw?url=";
 const PAGE = 10;
 const KEY = {
