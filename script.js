@@ -1,6 +1,7 @@
-const gKey = "0dc86fce5370555738557352308711d8"; 
+const gKey = "0dc86fce5370555738557352308711d8";
 const proxy = "https://api.allorigins.win/raw?url=";
 const PAGE = 10;
+
 const KEY = {
   home: "technology",
   "artificial-intelligence": "artificial-intelligence",
@@ -12,6 +13,7 @@ const KEY = {
   leaders: "tech leaders",
   inventions: "invention OR discovery"
 };
+
 const TITLES = {
   home: { icon: "home", label: "Home", cls: "home" },
   "artificial-intelligence": { icon: "bot", label: "AI", cls: "ai" },
@@ -30,19 +32,16 @@ const burger = document.getElementById("burger");
 
 let route = "home", page = 1, loading = false, end = false;
 
-burger.onclick = () => {
-  const isOpen = drawer.classList.toggle("open");
-  burger.setAttribute("aria-expanded", isOpen);
-  drawer.setAttribute("aria-hidden", !isOpen);
-};
+// Menu toggle
+burger.onclick = () => drawer.classList.toggle("open");
+
 drawer.onclick = e => {
   if (e.target.tagName === "A") {
     drawer.classList.remove("open");
-    burger.setAttribute("aria-expanded", false);
-    drawer.setAttribute("aria-hidden", true);
   }
 };
 
+// Route control
 window.addEventListener("hashchange", router);
 router();
 
@@ -53,7 +52,9 @@ function router() {
   }
 
   route = location.hash.slice(1) || "home";
-  page = 1; end = false; loading = false;
+  page = 1;
+  end = false;
+  loading = false;
 
   const { icon, label, cls } = TITLES[route] || {};
   view.innerHTML = `
@@ -65,6 +66,7 @@ function router() {
   loadPage();
 }
 
+// Scroll for loading more
 window.addEventListener("scroll", () => {
   if (loading || end || location.hash.startsWith("#article/")) return;
   if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 200) {
@@ -73,6 +75,7 @@ window.addEventListener("scroll", () => {
   }
 });
 
+// Fetch & render articles
 async function loadPage() {
   loading = true;
   document.getElementById("spinner").classList.remove("hidden");
@@ -97,50 +100,66 @@ async function loadPage() {
 
 function render(list) {
   const feed = document.getElementById("feed");
+
   list.forEach(a => {
     const host = new URL(a.url).hostname.replace(/^www\./, '');
     const timeAgo = formatTime(a.publishedAt);
-    feed.insertAdjacentHTML("beforeend", `
-      <div class="news-card" data-url="${a.url}">
-        <h3>${a.title}</h3>
-        ${a.image ? `<img src="${a.image}" loading="lazy">` : ""}
-        <p class="article-meta">${host} · ${timeAgo}</p>
-      </div>
-    `);
+
+    const div = document.createElement("div");
+    div.className = "news-card";
+    div.dataset.url = a.url;
+    div.dataset.title = a.title;
+    div.dataset.image = a.image;
+    div.dataset.meta = `${host} · ${timeAgo}`;
+    div.dataset.description = a.description;
+
+    div.innerHTML = `
+      <h3>${a.title}</h3>
+      <img src="${a.image}" loading="lazy" />
+      <p class="article-meta">${host} · ${timeAgo}</p>
+    `;
+
+    feed.appendChild(div);
   });
 }
 
+// Click to view full article summary
 view.onclick = e => {
   const card = e.target.closest(".news-card");
   if (card) {
-    const url = card.dataset.url;
-    location.hash = `article/${encodeURIComponent(url)}`;
+    const url = encodeURIComponent(card.dataset.url);
+    location.hash = `article/${url}`;
   }
 };
 
-async function showArticle(url) {
+function showArticle(encodedUrl) {
+  const url = decodeURIComponent(encodedUrl);
+  const card = [...document.querySelectorAll(".news-card")].find(c => c.dataset.url === url);
+  if (!card) return history.back();
+
+  const title = card.dataset.title;
+  const image = card.dataset.image;
+  const meta = card.dataset.meta;
+  const description = card.dataset.description;
+
   view.innerHTML = `
     <button id="back">← Back</button>
-    <div class="article-full">
-      <div id="article-container">Loading article…</div>
-    </div>
+    <article class="article-full">
+      ${image ? `<img src="${image}" alt="">` : ""}
+      <h2>${title}</h2>
+      <p class="article-meta">${meta}</p>
+      <p>${description}</p>
+      <a class="read-button" href="${url}" target="_blank">Read Full Article ↗</a>
+    </article>
   `;
-  document.getElementById("back").onclick = () => history.back();
 
-  // Embed via proxy in a sandboxed iframe
-  const container = document.getElementById("article-container");
-  container.innerHTML = `
-    <iframe
-      src="${proxy}${encodeURIComponent(url)}"
-      sandbox="allow-same-origin allow-scripts allow-popups"
-      title="Embedded article"
-    ></iframe>
-  `;
+  document.getElementById("back").onclick = () => history.back();
 }
 
+// Format "time ago"
 function formatTime(dateString) {
   const time = new Date(dateString).getTime();
-  const diff = Math.floor((Date.now() - time) / 60000);
+  const diff = Math.floor((Date.now() - time) / 60000); // minutes ago
   if (diff < 1) return "just now";
   if (diff < 60) return `${diff}m ago`;
   const hours = Math.floor(diff / 60);
