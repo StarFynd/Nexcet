@@ -1,4 +1,4 @@
-const gKey = "0dc86fce5370555738557352308711d8"; // Use GNews only for now
+const gKey = "0dc86fce5370555738557352308711d8"; 
 const proxy = "https://api.allorigins.win/raw?url=";
 const PAGE = 10;
 const KEY = {
@@ -23,27 +23,37 @@ const TITLES = {
   leaders: { icon: "user", label: "Tech Leaders", cls: "leaders" },
   inventions: { icon: "lightbulb", label: "Inventions", cls: "inventions" }
 };
+
 const view = document.getElementById("view");
 const drawer = document.getElementById("drawer");
 const burger = document.getElementById("burger");
 
 let route = "home", page = 1, loading = false, end = false;
 
-burger.onclick = () => drawer.classList.toggle("open");
+burger.onclick = () => {
+  const isOpen = drawer.classList.toggle("open");
+  burger.setAttribute("aria-expanded", isOpen);
+  drawer.setAttribute("aria-hidden", !isOpen);
+};
 drawer.onclick = e => {
-  if (e.target.tagName === "A") drawer.classList.remove("open");
+  if (e.target.tagName === "A") {
+    drawer.classList.remove("open");
+    burger.setAttribute("aria-expanded", false);
+    drawer.setAttribute("aria-hidden", true);
+  }
 };
 
 window.addEventListener("hashchange", router);
 router();
 
 function router() {
-  if (location.hash.startsWith("#article/")) return showArticle(decodeURIComponent(location.hash.split("/")[1]));
+  if (location.hash.startsWith("#article/")) {
+    const url = decodeURIComponent(location.hash.split("/")[1]);
+    return showArticle(url);
+  }
 
   route = location.hash.slice(1) || "home";
-  page = 1;
-  end = false;
-  loading = false;
+  page = 1; end = false; loading = false;
 
   const { icon, label, cls } = TITLES[route] || {};
   view.innerHTML = `
@@ -55,13 +65,13 @@ function router() {
   loadPage();
 }
 
-window.onscroll = () => {
+window.addEventListener("scroll", () => {
   if (loading || end || location.hash.startsWith("#article/")) return;
   if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 200) {
     page++;
     loadPage();
   }
-};
+});
 
 async function loadPage() {
   loading = true;
@@ -87,7 +97,6 @@ async function loadPage() {
 
 function render(list) {
   const feed = document.getElementById("feed");
-
   list.forEach(a => {
     const host = new URL(a.url).hostname.replace(/^www\./, '');
     const timeAgo = formatTime(a.publishedAt);
@@ -101,6 +110,34 @@ function render(list) {
   });
 }
 
+view.onclick = e => {
+  const card = e.target.closest(".news-card");
+  if (card) {
+    const url = card.dataset.url;
+    location.hash = `article/${encodeURIComponent(url)}`;
+  }
+};
+
+async function showArticle(url) {
+  view.innerHTML = `
+    <button id="back">← Back</button>
+    <div class="article-full">
+      <div id="article-container">Loading article…</div>
+    </div>
+  `;
+  document.getElementById("back").onclick = () => history.back();
+
+  // Embed via proxy in a sandboxed iframe
+  const container = document.getElementById("article-container");
+  container.innerHTML = `
+    <iframe
+      src="${proxy}${encodeURIComponent(url)}"
+      sandbox="allow-same-origin allow-scripts allow-popups"
+      title="Embedded article"
+    ></iframe>
+  `;
+}
+
 function formatTime(dateString) {
   const time = new Date(dateString).getTime();
   const diff = Math.floor((Date.now() - time) / 60000);
@@ -110,31 +147,4 @@ function formatTime(dateString) {
   if (hours < 24) return `${hours}h ago`;
   const days = Math.floor(hours / 24);
   return `${days}d ago`;
-}
-
-view.onclick = e => {
-  const card = e.target.closest(".news-card");
-  if (card) location.hash = `article/${encodeURIComponent(card.dataset.url)}`;
-};
-
-function showArticle(url) {
-  const feed = document.getElementById("feed");
-  const cards = [...feed.querySelectorAll(".news-card")];
-  const match = cards.find(c => c.dataset.url === url);
-  if (!match) return history.back();
-
-  const title = match.querySelector("h3").textContent;
-  const image = match.querySelector("img")?.src || "";
-  const meta = match.querySelector(".article-meta")?.textContent || "";
-  view.innerHTML = `
-    <button id="back">← Back</button>
-    <article class="article-full">
-      ${image ? `<img src="${image}">` : ""}
-      <h2>${title}</h2>
-      <p class="article-meta">${meta}</p>
-      <p>Description not available</p>
-      <a href="${url}" target="_blank">Read original ↗</a>
-    </article>
-  `;
-  document.getElementById("back").onclick = () => history.back();
 }
