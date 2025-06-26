@@ -31,17 +31,17 @@ const drawer = document.getElementById("drawer");
 const burger = document.getElementById("burger");
 
 let route = "home", page = 1, loading = false, end = false;
-let seenUrls = new Set(); // ✅ Track duplicates
+let seenUrls = new Set(); // ✅ Duplicate tracking
 
-// Menu toggle
+// Toggle drawer
 burger.onclick = () => drawer.classList.toggle("open");
 drawer.onclick = e => {
   if (e.target.tagName === "A") drawer.classList.remove("open");
 };
 
-// Route control
+// Route handling
 window.addEventListener("hashchange", router);
-router();
+window.addEventListener("load", router); // ✅ Load fresh on visit
 
 function router() {
   if (location.hash.startsWith("#article/")) {
@@ -53,7 +53,7 @@ function router() {
   page = 1;
   end = false;
   loading = false;
-  seenUrls.clear(); // ✅ Always reset on new section or refresh
+  seenUrls.clear(); // ✅ Reset URL memory
 
   const { icon, label, cls } = TITLES[route] || {};
   view.innerHTML = `
@@ -66,46 +66,48 @@ function router() {
 }
 
 // Infinite scroll
-window.addEventListener("scroll", () => {
+window.onscroll = () => {
   if (loading || end || location.hash.startsWith("#article/")) return;
   if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 200) {
     page++;
     loadPage();
   }
-});
+};
 
 // Load articles
 async function loadPage() {
   loading = true;
-  document.getElementById("spinner").classList.remove("hidden");
+  const spinner = document.getElementById("spinner");
+  if (spinner) spinner.classList.remove("hidden");
 
   const query = KEY[route] || "technology";
   const url = `https://gnews.io/api/v4/search?q=${encodeURIComponent(query)}&token=${gKey}&lang=en&max=${PAGE}&page=${page}`;
-  let list = [];
+  let articles = [];
 
   try {
     const res = await fetch(proxy + encodeURIComponent(url));
     const data = await res.json();
-    list = (data.articles || [])
+    articles = (data.articles || [])
       .filter(a => a.image && a.title && a.url && a.description)
       .filter(a => {
         if (seenUrls.has(a.url)) return false;
         seenUrls.add(a.url);
         return true;
       });
-  } catch (err) {
-    console.error(err);
+  } catch (e) {
+    console.error("Fetch failed", e);
   }
 
-  render(list);
-  if (list.length < PAGE) end = true;
-  document.getElementById("spinner").classList.add("hidden");
+  render(articles);
+  if (articles.length < PAGE) end = true;
+  if (spinner) spinner.classList.add("hidden");
   loading = false;
 }
 
-// Render articles
+// Render articles to screen
 function render(list) {
   const feed = document.getElementById("feed");
+  if (!feed) return;
 
   list.forEach(a => {
     const host = new URL(a.url).hostname.replace(/^www\./, '');
@@ -129,7 +131,7 @@ function render(list) {
   });
 }
 
-// Article viewer
+// Full article view
 view.onclick = e => {
   const card = e.target.closest(".news-card");
   if (card) {
@@ -143,10 +145,7 @@ function showArticle(encodedUrl) {
   const card = [...document.querySelectorAll(".news-card")].find(c => c.dataset.url === url);
   if (!card) return history.back();
 
-  const title = card.dataset.title;
-  const image = card.dataset.image;
-  const meta = card.dataset.meta;
-  const description = card.dataset.description;
+  const { title, image, meta, description } = card.dataset;
 
   view.innerHTML = `
     <button id="back">← Back</button>
@@ -162,14 +161,13 @@ function showArticle(encodedUrl) {
   document.getElementById("back").onclick = () => history.back();
 }
 
-// Format time ago
+// Time formatting
 function formatTime(dateString) {
   const time = new Date(dateString).getTime();
-  const diff = Math.floor((Date.now() - time) / 60000); // minutes ago
+  const diff = Math.floor((Date.now() - time) / 60000);
   if (diff < 1) return "just now";
   if (diff < 60) return `${diff}m ago`;
   const hours = Math.floor(diff / 60);
   if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  return `${days}d ago`;
+  return `${Math.floor(hours / 24)}d ago`;
 }
