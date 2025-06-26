@@ -31,14 +31,12 @@ const drawer = document.getElementById("drawer");
 const burger = document.getElementById("burger");
 
 let route = "home", page = 1, loading = false, end = false;
+let seenUrls = new Set(); // ✅ Track duplicates
 
 // Menu toggle
 burger.onclick = () => drawer.classList.toggle("open");
-
 drawer.onclick = e => {
-  if (e.target.tagName === "A") {
-    drawer.classList.remove("open");
-  }
+  if (e.target.tagName === "A") drawer.classList.remove("open");
 };
 
 // Route control
@@ -55,6 +53,7 @@ function router() {
   page = 1;
   end = false;
   loading = false;
+  seenUrls.clear(); // ✅ Always reset on new section or refresh
 
   const { icon, label, cls } = TITLES[route] || {};
   view.innerHTML = `
@@ -66,7 +65,7 @@ function router() {
   loadPage();
 }
 
-// Scroll for loading more
+// Infinite scroll
 window.addEventListener("scroll", () => {
   if (loading || end || location.hash.startsWith("#article/")) return;
   if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 200) {
@@ -75,7 +74,7 @@ window.addEventListener("scroll", () => {
   }
 });
 
-// Fetch & render articles
+// Load articles
 async function loadPage() {
   loading = true;
   document.getElementById("spinner").classList.remove("hidden");
@@ -87,7 +86,13 @@ async function loadPage() {
   try {
     const res = await fetch(proxy + encodeURIComponent(url));
     const data = await res.json();
-    list = (data.articles || []).filter(a => a.image && a.title && a.url && a.description);
+    list = (data.articles || [])
+      .filter(a => a.image && a.title && a.url && a.description)
+      .filter(a => {
+        if (seenUrls.has(a.url)) return false;
+        seenUrls.add(a.url);
+        return true;
+      });
   } catch (err) {
     console.error(err);
   }
@@ -98,6 +103,7 @@ async function loadPage() {
   loading = false;
 }
 
+// Render articles
 function render(list) {
   const feed = document.getElementById("feed");
 
@@ -123,7 +129,7 @@ function render(list) {
   });
 }
 
-// Click to view full article summary
+// Article viewer
 view.onclick = e => {
   const card = e.target.closest(".news-card");
   if (card) {
@@ -156,7 +162,7 @@ function showArticle(encodedUrl) {
   document.getElementById("back").onclick = () => history.back();
 }
 
-// Format "time ago"
+// Format time ago
 function formatTime(dateString) {
   const time = new Date(dateString).getTime();
   const diff = Math.floor((Date.now() - time) / 60000); // minutes ago
