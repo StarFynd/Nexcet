@@ -30,18 +30,21 @@ const view = document.getElementById("view");
 const drawer = document.getElementById("drawer");
 const burger = document.getElementById("burger");
 
-let route = "home", page = 1, loading = false, end = false;
-let seenUrls = new Set(); // ✅ Duplicate tracking
+let route = "home";
+let page = 1;
+let loading = false;
+let end = false;
+let seenUrls = new Set();
 
-// Toggle drawer
+// Handle menu toggle
 burger.onclick = () => drawer.classList.toggle("open");
 drawer.onclick = e => {
   if (e.target.tagName === "A") drawer.classList.remove("open");
 };
 
-// Route handling
+// Main router
 window.addEventListener("hashchange", router);
-window.addEventListener("load", router); // ✅ Load fresh on visit
+window.addEventListener("load", router);
 
 function router() {
   if (location.hash.startsWith("#article/")) {
@@ -53,7 +56,7 @@ function router() {
   page = 1;
   end = false;
   loading = false;
-  seenUrls.clear(); // ✅ Reset URL memory
+  seenUrls.clear();
 
   const { icon, label, cls } = TITLES[route] || {};
   view.innerHTML = `
@@ -65,46 +68,45 @@ function router() {
   loadPage();
 }
 
-// Infinite scroll
+// Scroll to load more
 window.onscroll = () => {
   if (loading || end || location.hash.startsWith("#article/")) return;
-  if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 200) {
+  if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 300) {
     page++;
     loadPage();
   }
 };
 
-// Load articles
+// Load and render articles
 async function loadPage() {
   loading = true;
   const spinner = document.getElementById("spinner");
-  if (spinner) spinner.classList.remove("hidden");
+  spinner?.classList.remove("hidden");
 
   const query = KEY[route] || "technology";
   const url = `https://gnews.io/api/v4/search?q=${encodeURIComponent(query)}&token=${gKey}&lang=en&max=${PAGE}&page=${page}`;
-  let articles = [];
-
+  
   try {
     const res = await fetch(proxy + encodeURIComponent(url));
     const data = await res.json();
-    articles = (data.articles || [])
+    const articles = (data.articles || [])
       .filter(a => a.image && a.title && a.url && a.description)
       .filter(a => {
         if (seenUrls.has(a.url)) return false;
         seenUrls.add(a.url);
         return true;
       });
+    render(articles);
+    if (articles.length < PAGE) end = true;
   } catch (e) {
-    console.error("Fetch failed", e);
+    console.error("Failed to load articles", e);
   }
 
-  render(articles);
-  if (articles.length < PAGE) end = true;
-  if (spinner) spinner.classList.add("hidden");
+  spinner?.classList.add("hidden");
   loading = false;
 }
 
-// Render articles to screen
+// Render article cards
 function render(list) {
   const feed = document.getElementById("feed");
   if (!feed) return;
@@ -113,30 +115,30 @@ function render(list) {
     const host = new URL(a.url).hostname.replace(/^www\./, '');
     const timeAgo = formatTime(a.publishedAt);
 
-    const div = document.createElement("div");
-    div.className = "news-card";
-    div.dataset.url = a.url;
-    div.dataset.title = a.title;
-    div.dataset.image = a.image;
-    div.dataset.meta = `${host} · ${timeAgo}`;
-    div.dataset.description = a.description;
+    const card = document.createElement("div");
+    card.className = "news-card";
+    card.dataset.url = a.url;
+    card.dataset.title = a.title;
+    card.dataset.image = a.image;
+    card.dataset.meta = `${host} · ${timeAgo}`;
+    card.dataset.description = a.description;
 
-    div.innerHTML = `
+    card.innerHTML = `
       <h3>${a.title}</h3>
       <img src="${a.image}" loading="lazy" />
       <p class="article-meta">${host} · ${timeAgo}</p>
     `;
 
-    feed.appendChild(div);
+    feed.appendChild(card);
   });
 }
 
-// Full article view
+// Article view
 view.onclick = e => {
   const card = e.target.closest(".news-card");
   if (card) {
-    const url = encodeURIComponent(card.dataset.url);
-    location.hash = `article/${url}`;
+    const encoded = encodeURIComponent(card.dataset.url);
+    location.hash = `article/${encoded}`;
   }
 };
 
