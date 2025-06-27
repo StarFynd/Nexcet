@@ -4,14 +4,14 @@ const PAGE = 10;
 
 const KEY = {
   home: "technology",
-  "artificial-intelligence": "artificial-intelligence",
+  "artificial-intelligence": "openai OR gpt OR nvidia", // updated for freshness
   cybersecurity: "cybersecurity",
-  games: '"video games" OR gaming',
-  software: "software development",
+  games: "video games",
+  software: "software",
   hardware: "hardware",
-  startups: "startup OR funding",
-  leaders: "tech leaders",
-  inventions: "invention OR discovery"
+  startups: "startup",
+  leaders: "elon musk OR tech ceos",
+  inventions: "inventions"
 };
 
 const TITLES = {
@@ -34,15 +34,14 @@ let route = "home";
 let page = 1;
 let loading = false;
 let end = false;
-let seenUrls = new Set();
 
-// Handle menu toggle
+// Menu toggle
 burger.onclick = () => drawer.classList.toggle("open");
 drawer.onclick = e => {
   if (e.target.tagName === "A") drawer.classList.remove("open");
 };
 
-// Main router
+// Routing
 window.addEventListener("hashchange", router);
 window.addEventListener("load", router);
 
@@ -56,7 +55,6 @@ function router() {
   page = 1;
   end = false;
   loading = false;
-  seenUrls.clear();
 
   const { icon, label, cls } = TITLES[route] || {};
   view.innerHTML = `
@@ -69,44 +67,48 @@ function router() {
 }
 
 // Scroll to load more
-window.onscroll = () => {
+window.addEventListener("scroll", () => {
   if (loading || end || location.hash.startsWith("#article/")) return;
   if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 300) {
     page++;
     loadPage();
   }
-};
+});
 
-// Load and render articles
+// Load articles
 async function loadPage() {
   loading = true;
   const spinner = document.getElementById("spinner");
-  spinner?.classList.remove("hidden");
+  if (spinner) spinner.innerText = "Loading more articles...";
 
   const query = KEY[route] || "technology";
   const url = `https://gnews.io/api/v4/search?q=${encodeURIComponent(query)}&token=${gKey}&lang=en&max=${PAGE}&page=${page}`;
-  
+
   try {
     const res = await fetch(proxy + encodeURIComponent(url));
     const data = await res.json();
-    const articles = (data.articles || [])
-      .filter(a => a.image && a.title && a.url && a.description)
-      .filter(a => {
-        if (seenUrls.has(a.url)) return false;
-        seenUrls.add(a.url);
-        return true;
-      });
-    render(articles);
-    if (articles.length < PAGE) end = true;
+
+    const list = (data.articles || []).filter(a =>
+      a.image && a.title && a.url && a.description
+    );
+
+    if (list.length === 0) {
+      end = true;
+      spinner.innerText = "✅ No more articles.";
+      return;
+    }
+
+    render(list);
+    if (list.length < PAGE) end = true;
+    spinner.innerText = "";
   } catch (e) {
-    console.error("Failed to load articles", e);
+    spinner.innerText = "❌ Failed to load. Try refreshing.";
   }
 
-  spinner?.classList.add("hidden");
   loading = false;
 }
 
-// Render article cards
+// Render articles
 function render(list) {
   const feed = document.getElementById("feed");
   if (!feed) return;
@@ -133,12 +135,12 @@ function render(list) {
   });
 }
 
-// Article view
+// Click to view article
 view.onclick = e => {
   const card = e.target.closest(".news-card");
   if (card) {
-    const encoded = encodeURIComponent(card.dataset.url);
-    location.hash = `article/${encoded}`;
+    const url = encodeURIComponent(card.dataset.url);
+    location.hash = `article/${url}`;
   }
 };
 
@@ -163,7 +165,7 @@ function showArticle(encodedUrl) {
   document.getElementById("back").onclick = () => history.back();
 }
 
-// Time formatting
+// Format time ago
 function formatTime(dateString) {
   const time = new Date(dateString).getTime();
   const diff = Math.floor((Date.now() - time) / 60000);
