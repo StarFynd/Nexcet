@@ -35,9 +35,7 @@ let route = "home";
 let page = 1;
 let loading = false;
 let end = false;
-let seenUrls = new Set();
-let seenTitles = new Set();
-
+let seenUrls, seenTitles;
 // Toggle drawer
 burger.onclick = () => drawer.classList.toggle("open");
 drawer.onclick = e => {
@@ -58,8 +56,10 @@ function router() {
   page = 1;
   end = false;
   loading = false;
-  seenUrls.clear();
-  seenTitles.clear();
+
+  // Reset duplicates every time you switch sections
+  seenUrls = new Set();
+  seenTitles = new Set();
 
   const { icon, label, cls } = TITLES[route] || {};
   view.innerHTML = `
@@ -125,11 +125,11 @@ async function loadPage() {
         return !isDuplicate;
       });
 
-    if (merged.length === 0) {
-      end = true;
-      spinner.innerText = "✅ No more articles.";
-      return;
-    }
+    if (merged.length === 0 && page >= 4) {
+  end = true;
+  spinner.innerText = "✅ No more unique articles.";
+  return;
+}
 
     render(merged);
     if (merged.length < PAGE * 2) end = true;
