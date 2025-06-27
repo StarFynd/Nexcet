@@ -76,6 +76,9 @@ window.addEventListener("scroll", () => {
 });
 
 // Load articles
+let seenUrls = new Set();
+let seenTitles = new Set();
+
 async function loadPage() {
   loading = true;
   const spinner = document.getElementById("spinner");
@@ -88,9 +91,16 @@ async function loadPage() {
     const res = await fetch(proxy + encodeURIComponent(url));
     const data = await res.json();
 
-    const list = (data.articles || []).filter(a =>
-      a.image && a.title && a.url && a.description
-    );
+    const list = (data.articles || [])
+      .filter(a => a.image && a.title && a.url && a.description)
+      .filter(a => {
+        const isDuplicate = seenUrls.has(a.url) || seenTitles.has(a.title);
+        if (!isDuplicate) {
+          seenUrls.add(a.url);
+          seenTitles.add(a.title);
+        }
+        return !isDuplicate;
+      });
 
     if (list.length === 0) {
       end = true;
