@@ -32,6 +32,9 @@ const drawer = document.getElementById("drawer");
 const burger = document.getElementById("burger");
 
 let route = "home";
+let seenNormalizedTitles = new Set();
+let seenCleanUrls = new Set();
+let emptyScrolls = 0;
 let page = 1;
 let loading = false;
 let end = false;
@@ -56,10 +59,6 @@ function router() {
   page = 1;
   end = false;
   loading = false;
-
-  // Reset duplicates every time you switch sections
-  seenUrls = new Set();
-  seenTitles = new Set();
 
   const { icon, label, cls } = TITLES[route] || {};
   view.innerHTML = `
@@ -114,28 +113,39 @@ async function loadPage() {
       source: a.source.name
     }));
 
-    const merged = [...gList, ...nList]
-      .filter(a => a.image && a.title && a.url && a.description)
-      .filter(a => {
-        const isDuplicate = seenUrls.has(a.url) || seenTitles.has(a.title);
-        if (!isDuplicate) {
-          seenUrls.add(a.url);
-          seenTitles.add(a.title);
-        }
-        return !isDuplicate;
-      });
+    const all = [...gList, ...nList];
 
-    if (merged.length === 0 && page >= 4) {
-  end = true;
-  spinner.innerText = "✅ No more unique articles.";
-  return;
-}
+    const unique = all.filter(a => {
+      if (!a.title || !a.url || !a.description || !a.image) return false;
 
-    render(merged);
-    if (merged.length < PAGE * 2) end = true;
+      const normalizedTitle = a.title.toLowerCase().replace(/[^a-z0-9]/g, "");
+      const cleanUrl = a.url.split(/[?#]/)[0];
+
+      if (seenNormalizedTitles.has(normalizedTitle) || seenCleanUrls.has(cleanUrl)) return false;
+
+      seenNormalizedTitles.add(normalizedTitle);
+      seenCleanUrls.add(cleanUrl);
+
+      return true;
+    });
+
+    if (unique.length === 0) {
+      emptyScrolls++;
+      if (emptyScrolls >= 3) {
+        end = true;
+        spinner.innerText = "✅ No more articles.";
+      } else {
+        page++;
+        loadPage(); // try next page immediately
+      }
+      return;
+    }
+
+    emptyScrolls = 0;
+    render(unique);
     spinner.innerText = "";
   } catch (e) {
-    spinner.innerText = "❌ Failed to load. Try refreshing.";
+    spinner.innerText = "❌ Failed to load.";
     console.error(e);
   }
 
