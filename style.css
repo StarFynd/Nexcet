@@ -235,3 +235,11 @@ footer {
   color: #999;
   cursor: not-allowed;
 }
+.drawer a.active {
+  background: #00ffc8;
+  color: #000;
+  font-weight: bold;
+}
+.drawer a.active i {
+  color: #000;
+}

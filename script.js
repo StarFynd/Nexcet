@@ -56,6 +56,15 @@ function router() {
   }
 
   route = location.hash.slice(1) || "home";
+  // Highlight active menu link
+document.querySelectorAll(".drawer a").forEach(link => {
+  const href = link.getAttribute("href").replace("#", "");
+  if (href === route) {
+    link.classList.add("active");
+  } else {
+    link.classList.remove("active");
+  }
+});
   page = 1;
   end = false;
   loading = false;
