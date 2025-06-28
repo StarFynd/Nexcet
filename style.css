@@ -243,3 +243,14 @@ footer {
 .drawer a.active i {
   color: #000;
 }
+#error {
+  text-align: center;
+  color: #ff6b6b;
+  font-weight: bold;
+  margin: 20px auto;
+  padding: 12px;
+  border: 1px solid #ff6b6b;
+  border-radius: 8px;
+  max-width: 500px;
+  background: rgba(255, 107, 107, 0.1);
+}

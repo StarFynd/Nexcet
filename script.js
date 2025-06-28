@@ -75,6 +75,7 @@ document.querySelectorAll(".drawer a").forEach(link => {
     <h2 class="section-title ${cls}"><i data-lucide="${icon}"></i> ${label}</h2>
     <div id="feed"></div>
     <div id="spinner" class="hidden">Loading...</div>
+    <div id="error" class="hidden">Sorry, no articles are available right now.</div>
     <button id="loadMore">Load More</button>
   </div>
 `;
@@ -159,7 +160,15 @@ async function loadPage() {
     spinner.innerText = "❌ Failed to load.";
     console.error(e);
   }
-
+if (list.length === 0 && page === 1) {
+  document.getElementById("error").classList.remove("hidden");
+  document.getElementById("loadMore").disabled = true;
+  end = true;
+} else {
+  document.getElementById("error").classList.add("hidden");
+  render(list);
+  if (list.length < PAGE) end = true;
+}
   loading = false;
 }
 
