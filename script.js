@@ -65,7 +65,8 @@ function router() {
   <div class="fade">
     <h2 class="section-title ${cls}"><i data-lucide="${icon}"></i> ${label}</h2>
     <div id="feed"></div>
-    <div id="spinner">Loading...</div>
+    <div id="spinner" class="hidden">Loading...</div>
+    <button id="loadMore">Load More</button>
   </div>
 `;
   lucide.createIcons();
@@ -73,9 +74,8 @@ function router() {
 }
 
 // Scroll handler
-window.addEventListener("scroll", () => {
-  if (loading || end || location.hash.startsWith("#article/")) return;
-  if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 300) {
+view.addEventListener("click", e => {
+  if (e.target.id === "loadMore") {
     page++;
     loadPage();
   }
@@ -85,7 +85,7 @@ window.addEventListener("scroll", () => {
 async function loadPage() {
   loading = true;
   const spinner = document.getElementById("spinner");
-  if (spinner) spinner.innerText = "Loading more articles...";
+  if (spinner) spinner.innerText = "Loading...";
 
   const query = KEY[route] || "technology";
   const gUrl = `https://gnews.io/api/v4/search?q=${encodeURIComponent(query)}&token=${gKey}&lang=en&max=${PAGE}&page=${page}`;
