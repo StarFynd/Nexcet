@@ -62,10 +62,12 @@ function router() {
 
   const { icon, label, cls } = TITLES[route] || {};
   view.innerHTML = `
+  <div class="fade">
     <h2 class="section-title ${cls}"><i data-lucide="${icon}"></i> ${label}</h2>
     <div id="feed"></div>
     <div id="spinner">Loading...</div>
-  `;
+  </div>
+`;
   lucide.createIcons();
   loadPage();
 }
