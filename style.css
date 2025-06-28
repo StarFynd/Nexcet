@@ -107,12 +107,13 @@ main {
 /* Cards */
 .news-card {
   background: #1a1a1d;
-  border-radius: 10px;
-  margin-bottom: 20px;
-  box-shadow: 0 1px 5px rgba(0,0,0,0.3);
+  border-radius: 12px;
+  margin: 24px 0;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
   overflow: hidden;
   cursor: pointer;
-  transition: transform 0.2s ease;
+  transition: transform 0.25s ease;
+  padding: 10px;
 }
 .news-card:hover {
   transform: scale(1.01);
@@ -125,12 +126,13 @@ main {
 .news-card h3 {
   font-size: 1.2rem;
   font-weight: 600;
-  padding: 12px 16px 6px;
+  padding: 10px 12px;
+  line-height: 1.5;
 }
 .article-meta {
   font-size: 0.9rem;
   color: #a0a0a0;
-  padding: 0 16px 12px;
+  padding: 0 12px 14px;
 }
 
 /* Article view */
