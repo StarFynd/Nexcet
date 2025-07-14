@@ -27,12 +27,24 @@ const TITLES = {
   inventions: { icon: "lightbulb", label: "Inventions", cls: "inventions" }
 };
 
+const dupTracker = {};   // Keeps track of duplicates separately per Realm
+
+function getTracker(realm) {
+  if (!dupTracker[realm]) {
+    dupTracker[realm] = {
+      titles: new Set(),
+      urls: new Set()
+    };
+  }
+  return dupTracker[realm];
+}
 const drawerTitle = document.querySelector(".drawer-header");
 if (drawerTitle) drawerTitle.textContent = "Realms";
 const view = document.getElementById("view");
 const drawer = document.getElementById("drawer");
 const burger = document.getElementById("burger");
 
+let retry = 0;
 let route = "home";
 let seenNormalizedTitles = new Set();
 let seenCleanUrls = new Set();
@@ -59,6 +71,8 @@ function router() {
   }
 
   route = location.hash.slice(1) || "home";
+  seenNormalizedTitles.clear();
+seenCleanUrls.clear();
   // Highlight active menu link
 document.querySelectorAll(".drawer a").forEach(link => {
   const href = link.getAttribute("href").replace("#", "");
@@ -130,19 +144,26 @@ render(current);      // ← now the real articles replace the skeletons
 
   // If no preloaded, fetch now (for first page or fallback)
   const list = await fetchArticles(route, page);
-  if (list.length === 0 && page === 1) {
-    document.getElementById("error").classList.remove("hidden");
-    document.getElementById("loadMore").disabled = true;
-    end = true;
-  } else {
-    document.getElementById("error").classList.add("hidden");
-    // before render(list)
-document.querySelectorAll('.skeleton-card').forEach(el => el.remove());
-render(list);
-    page++;
-    preloadNext(); // Get next one ready
-    if (list.length < PAGE) end = true;
+  if (list.length === 0) {
+  retry++;
+  if (retry < 3) {
+    page++;         // try next page
+    loadPage();     // retry again
+    return;
   }
+
+  // After 3 tries, give up
+  document.getElementById("error").classList.remove("hidden");
+  document.getElementById("loadMore").disabled = true;
+  end = true;
+} else {
+  retry = 0; // reset retry count if successful
+  document.getElementById("error").classList.add("hidden");
+  document.querySelectorAll('.skeleton-card').forEach(el => el.remove());
+  render(list);
+  preloadNext(); // optional if you're using preloading
+  if (list.length < PAGE) end = true;
+}
 
   loading = false;
 }
@@ -224,10 +245,21 @@ async function fetchArticles(route, page) {
   const nUrl = `https://newsapi.org/v2/everything?q=${encodeURIComponent(query)}&apiKey=${newsKey}&language=en&pageSize=${PAGE}&page=${page}&sortBy=publishedAt`;
 
   try {
-    const [gData, nData] = await Promise.all([
-      fetch(proxy + encodeURIComponent(gUrl)).then(res => res.json()),
-      fetch(proxy + encodeURIComponent(nUrl)).then(res => res.json())
-    ]);
+    const gPromise = fetch(proxy + encodeURIComponent(gUrl))
+  .then(res => res.json())
+  .catch(e => {
+    console.error("GNews fetch error:", e);
+    return { articles: [] }; // safely fail with empty list
+  });
+
+const nPromise = fetch(proxy + encodeURIComponent(nUrl))
+  .then(res => res.json())
+  .catch(e => {
+    console.error("NewsAPI fetch error:", e);
+    return { articles: [] }; // safely fail with empty list
+  });
+
+const [gData, nData] = await Promise.all([gPromise, nPromise]);
 
     let gList = (gData.articles || []).map(a => ({
       title: a.title,
@@ -255,10 +287,10 @@ async function fetchArticles(route, page) {
       const normalizedTitle = a.title.toLowerCase().replace(/[^a-z0-9]/g, "");
       const cleanUrl = a.url.split(/[?#]/)[0];
 
-      if (seenNormalizedTitles.has(normalizedTitle) || seenCleanUrls.has(cleanUrl)) return false;
-
-      seenNormalizedTitles.add(normalizedTitle);
-      seenCleanUrls.add(cleanUrl);
+      const { titles, urls } = getTracker(route);
+if (titles.has(normalizedTitle) || urls.has(cleanUrl)) return false;
+titles.add(normalizedTitle);
+urls.add(cleanUrl);
 
       return true;
     });
