@@ -297,3 +297,34 @@ footer {
 footer p {
   margin: 4px 0;
 }
+.skeleton-card {
+  background: #1a1a1d;
+  border-radius: 12px;
+  margin: 24px 0;
+  padding: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  animation: pulse 1.5s infinite ease-in-out;
+}
+.skeleton-title, .skeleton-img, .skeleton-meta {
+  background: #2a2a2d;
+  border-radius: 6px;
+}
+.skeleton-title {
+  width: 80%;
+  height: 20px;
+  margin: 16px 12px;
+}
+.skeleton-img {
+  width: 100%;
+  height: 180px;
+  margin-bottom: 10px;
+}
+.skeleton-meta {
+  width: 40%;
+  height: 14px;
+  margin: 0 12px 12px;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}

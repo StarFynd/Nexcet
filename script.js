@@ -27,6 +27,8 @@ const TITLES = {
   inventions: { icon: "lightbulb", label: "Inventions", cls: "inventions" }
 };
 
+const drawerTitle = document.querySelector(".drawer-header");
+if (drawerTitle) drawerTitle.textContent = "Realms";
 const view = document.getElementById("view");
 const drawer = document.getElementById("drawer");
 const burger = document.getElementById("burger");
@@ -34,6 +36,7 @@ const burger = document.getElementById("burger");
 let route = "home";
 let seenNormalizedTitles = new Set();
 let seenCleanUrls = new Set();
+let preloadList = [];  // this will hold the next batch of articles before user even asks
 let emptyScrolls = 0;
 let page = 1;
 let loading = false;
@@ -93,82 +96,54 @@ view.addEventListener("click", e => {
 
 // Load page from both APIs
 async function loadPage() {
+  if (end || loading) return;
+
   loading = true;
   const spinner = document.getElementById("spinner");
-  if (spinner) spinner.innerText = "Loading...";
+  const feed = document.getElementById("feed");
+  if (!feed) return;
 
-  const query = KEY[route] || "technology";
-  const gUrl = `https://gnews.io/api/v4/search?q=${encodeURIComponent(query)}&token=${gKey}&lang=en&max=${PAGE}&page=${page}`;
-  const nUrl = `https://newsapi.org/v2/everything?q=${encodeURIComponent(query)}&apiKey=${newsKey}&language=en&pageSize=${PAGE}&page=${page}&sortBy=publishedAt`;
-
-  try {
-    const [gData, nData] = await Promise.all([
-      fetch(proxy + encodeURIComponent(gUrl)).then(res => res.json()),
-      fetch(proxy + encodeURIComponent(nUrl)).then(res => res.json())
-    ]);
-
-    let gList = (gData.articles || []).map(a => ({
-      title: a.title,
-      url: a.url,
-      image: a.image,
-      description: a.description,
-      publishedAt: a.publishedAt,
-      source: new URL(a.url).hostname
-    }));
-
-    let nList = (nData.articles || []).map(a => ({
-      title: a.title,
-      url: a.url,
-      image: a.urlToImage,
-      description: a.description,
-      publishedAt: a.publishedAt,
-      source: a.source.name
-    }));
-
-    const all = [...gList, ...nList];
-
-    const unique = all.filter(a => {
-      if (!a.title || !a.url || !a.description || !a.image) return false;
-
-      const normalizedTitle = a.title.toLowerCase().replace(/[^a-z0-9]/g, "");
-      const cleanUrl = a.url.split(/[?#]/)[0];
-
-      if (seenNormalizedTitles.has(normalizedTitle) || seenCleanUrls.has(cleanUrl)) return false;
-
-      seenNormalizedTitles.add(normalizedTitle);
-      seenCleanUrls.add(cleanUrl);
-
-      return true;
-    });
-
-    if (unique.length === 0) {
-      emptyScrolls++;
-      if (emptyScrolls >= 3) {
-        end = true;
-        spinner.innerText = "✅ No more articles.";
-      } else {
-        page++;
-        loadPage(); // try next page immediately
-      }
-      return;
-    }
-
-    emptyScrolls = 0;
-    render(unique);
-    spinner.innerText = "";
-  } catch (e) {
-    spinner.innerText = "❌ Failed to load.";
-    console.error(e);
+  // Show 6 fake loading cards
+  for (let i = 0; i < 6; i++) {
+    const skeleton = document.createElement("div");
+    skeleton.className = "skeleton-card";
+    skeleton.innerHTML = `
+      <div class="skeleton-title"></div>
+      <div class="skeleton-img"></div>
+      <div class="skeleton-meta"></div>
+    `;
+    feed.appendChild(skeleton);
   }
-if (list.length === 0 && page === 1) {
-  document.getElementById("error").classList.remove("hidden");
-  document.getElementById("loadMore").disabled = true;
-  end = true;
-} else {
-  document.getElementById("error").classList.add("hidden");
-  render(list);
-  if (list.length < PAGE) end = true;
-}
+
+  // If we already preloaded next articles, use them
+  if (preloadList.length > 0) {
+    const current = preloadList;
+    preloadList = [];
+    // before render(current)
+document.querySelectorAll('.skeleton-card').forEach(el => el.remove());
+render(current);      // ← now the real articles replace the skeletons
+    loading = false;
+    page++;
+    preloadNext(); // Load the next page early
+    return;
+  }
+
+  // If no preloaded, fetch now (for first page or fallback)
+  const list = await fetchArticles(route, page);
+  if (list.length === 0 && page === 1) {
+    document.getElementById("error").classList.remove("hidden");
+    document.getElementById("loadMore").disabled = true;
+    end = true;
+  } else {
+    document.getElementById("error").classList.add("hidden");
+    // before render(list)
+document.querySelectorAll('.skeleton-card').forEach(el => el.remove());
+render(list);
+    page++;
+    preloadNext(); // Get next one ready
+    if (list.length < PAGE) end = true;
+  }
+
   loading = false;
 }
 
@@ -236,4 +211,61 @@ function formatTime(dateString) {
   const hours = Math.floor(diff / 60);
   if (hours < 24) return `${hours}h ago`;
   return `${Math.floor(hours / 24)}d ago`;
+}
+async function preloadNext() {
+  const nextList = await fetchArticles(route, page);
+  preloadList = nextList;
+}
+
+// Move your current fetch logic into this function
+async function fetchArticles(route, page) {
+  const query = KEY[route] || "technology";
+  const gUrl = `https://gnews.io/api/v4/search?q=${encodeURIComponent(query)}&token=${gKey}&lang=en&max=${PAGE}&page=${page}`;
+  const nUrl = `https://newsapi.org/v2/everything?q=${encodeURIComponent(query)}&apiKey=${newsKey}&language=en&pageSize=${PAGE}&page=${page}&sortBy=publishedAt`;
+
+  try {
+    const [gData, nData] = await Promise.all([
+      fetch(proxy + encodeURIComponent(gUrl)).then(res => res.json()),
+      fetch(proxy + encodeURIComponent(nUrl)).then(res => res.json())
+    ]);
+
+    let gList = (gData.articles || []).map(a => ({
+      title: a.title,
+      url: a.url,
+      image: a.image,
+      description: a.description,
+      publishedAt: a.publishedAt,
+      source: new URL(a.url).hostname
+    }));
+
+    let nList = (nData.articles || []).map(a => ({
+      title: a.title,
+      url: a.url,
+      image: a.urlToImage,
+      description: a.description,
+      publishedAt: a.publishedAt,
+      source: a.source.name
+    }));
+
+    const all = [...gList, ...nList];
+
+    const unique = all.filter(a => {
+      if (!a.title || !a.url || !a.description || !a.image) return false;
+
+      const normalizedTitle = a.title.toLowerCase().replace(/[^a-z0-9]/g, "");
+      const cleanUrl = a.url.split(/[?#]/)[0];
+
+      if (seenNormalizedTitles.has(normalizedTitle) || seenCleanUrls.has(cleanUrl)) return false;
+
+      seenNormalizedTitles.add(normalizedTitle);
+      seenCleanUrls.add(cleanUrl);
+
+      return true;
+    });
+
+    return unique;
+  } catch (e) {
+    console.error(e);
+    return [];
+  }
 }
