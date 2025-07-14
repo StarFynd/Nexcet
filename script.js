@@ -219,15 +219,17 @@ function showArticle(encodedUrl) {
   const { title, image, meta, description } = card.dataset;
 
   view.innerHTML = `
-    <button id="back">← Back</button>
-    <article class="article-full">
-      ${image ? `<img src="${image}" alt="">` : ""}
-      <h2>${title}</h2>
-      <p class="article-meta">${meta}</p>
-      <p>${description}</p>
-      <a class="read-button" href="${url}" target="_blank">Read Full Article ↗</a>
-    </article>
-  `;
+  <button id="back">← Back</button>
+  <article class="article-full fade">
+    ${image ? `<img src="${image}" alt="">` : ""}
+    <h2>${title}</h2>
+    <p class="article-meta">${meta}</p>
+    <div class="article-body">
+      <p>${description || "No summary available. Click below to read the original article."}</p>
+    </div>
+    <a class="read-button" href="${url}" target="_blank">View Original Source ↗</a>
+  </article>
+`;
 
   document.getElementById("back").onclick = () => history.back();
 }
