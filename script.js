@@ -59,6 +59,12 @@ burger.onclick = () => drawer.classList.toggle("open");
 drawer.onclick = e => {
   if (e.target.tagName === "A") drawer.classList.remove("open");
 };
+document.addEventListener("click", e => {
+  const isClickInside = drawer.contains(e.target) || burger.contains(e.target);
+  if (!isClickInside && drawer.classList.contains("open")) {
+    drawer.classList.remove("open");
+  }
+});
 
 // Handle routing
 window.addEventListener("hashchange", router);
@@ -98,6 +104,7 @@ document.querySelectorAll(".drawer a").forEach(link => {
 `;
   lucide.createIcons();
   loadPage();
+  preloadNext(); // preloads next batch right away
 }
 
 // Scroll handler
@@ -159,9 +166,11 @@ render(current);      // ← now the real articles replace the skeletons
 } else {
   retry = 0; // reset retry count if successful
   document.getElementById("error").classList.add("hidden");
-  document.querySelectorAll('.skeleton-card').forEach(el => el.remove());
+  
   render(list);
+  
   preloadNext(); // optional if you're using preloading
+  document.querySelectorAll('.skeleton-card').forEach(el => el.remove());
   if (list.length < PAGE) end = true;
 }
 
